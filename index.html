@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Automation Helper</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background-color: #121212;
+      color: #fff;
+    }
+
+    .output-box {
+      height: 300px;
+      overflow-y: scroll;
+      background: #000;
+      border: 1px solid #333;
+      padding: 12px;
+      font-family: monospace;
+      white-space: pre-wrap;
+    }
+
+    /* Fade-in animation */
+    .command-line {
+      opacity: 0;
+      transform: translateX(-8px);
+      animation: fadeInSlide 0.5s forwards;
+    }
+
+    @keyframes fadeInSlide {
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    /* Neon while typing (reduced a bit) */
+    .neon span {
+      text-shadow: 0 0 3px currentColor, 0 0 6px currentColor, 0 0 12px currentColor;
+    }
+
+    /* Softer glow after finished */
+    .soft span {
+      text-shadow: 0 0 2px currentColor, 0 0 4px rgba(255, 255, 255, 0.2);
+    }
+  </style>
+</head>
+
+<body class="container py-4">
+
+  <!-- Top navigation -->
+  <div class="mb-3 d-flex justify-content-between">
+    <a href="index.html" class="btn btn-secondary rounded-3">🏠 Home</a>
+    <a href="methodology.html" class="btn btn-info rounded-3">See Methodologies</a>
+  </div>
+
+  <h2 class="mb-4">⚡ Recon & Exploit Automation</h2>
+
+  <!-- Recon Section -->
+  <div class="card bg-dark text-light mb-4 rounded-3">
+    <div class="card-body">
+      <h4>Reconnaissance</h4>
+      <input type="text" id="target" class="form-control mb-2 rounded-3"
+        placeholder="Enter target domain (e.g. site.com)">
+      <div class="d-flex gap-2 mb-2">
+        <button class="btn btn-primary rounded-3" onclick="generateCommands('recon')">Generate</button>
+        <button class="btn btn-success rounded-3" style="display:none;" onclick="copyToClipboard('recon')">Copy</button>
+      </div>
+      <pre id="output-recon" class="output-box rounded-3" style="display:none;"></pre>
+    </div>
+  </div>
+
+  <!-- Exploitation Section -->
+  <div class="card bg-dark text-light mb-4 rounded-3">
+    <div class="card-body">
+      <h4>Exploitation</h4>
+      <input type="text" id="target2" class="form-control mb-2 rounded-3"
+        placeholder="Enter target domain (e.g. site.com)">
+      <input type="text" id="collaborator" class="form-control mb-2 rounded-3"
+        placeholder="Enter collaborator server (e.g. burpcollab)">
+      <div class="d-flex gap-2 mb-2">
+        <button class="btn btn-primary rounded-3" onclick="generateCommands('exploit')">Generate</button>
+        <button class="btn btn-warning rounded-3" style="display:none;"
+          onclick="copyToClipboard('exploit')">Copy</button>
+      </div>
+      <pre id="output-exploit" class="output-box rounded-3" style="display:none;"></pre>
+    </div>
+  </div>
+
+  <script>
+    function getRandomColor() {
+      const colors = ['#0ff', '#0f0', '#f0f', '#ff0', '#0cf', '#fc0', '#c0f', '#0fa'];
+      return colors[Math.floor(Math.random() * colors.length)];
+    }
+
+    function loadCommands(file, elementId, target = "", collaborator = "", type = "") {
+      fetch(file)
+        .then(response => {
+          if (!response.ok) throw new Error(`Failed to load ${file}`);
+          return response.text();
+        })
+        .then(data => {
+          let replaced = data
+            .replaceAll("{{TARGET}}", target)
+            .replaceAll("{{COLLAB}}", collaborator);
+
+          const lines = replaced.split('\n');
+          const element = document.getElementById(elementId);
+          element.dataset.raw = replaced.trim();
+          element.innerHTML = "";
+
+          lines.forEach((line, i) => {
+            setTimeout(() => {
+              const color = getRandomColor();
+              const div = document.createElement("div");
+              div.className = "command-line neon";
+              div.style.color = color;
+
+              const span = document.createElement("span");
+              span.textContent = line;
+              div.appendChild(span);
+              element.appendChild(div);
+
+              element.scrollTo({ top: element.scrollHeight, behavior: "smooth" });
+            }, i * 120);
+          });
+
+          element.style.display = "block";
+          const button = type === 'recon'
+            ? document.querySelector('.btn-success')
+            : document.querySelector('.btn-warning');
+          button.style.display = "inline-block";
+
+          const totalDelay = lines.length * 120 + 500;
+          setTimeout(() => {
+            element.querySelectorAll(".command-line").forEach(c => {
+              c.classList.remove("neon");
+              c.classList.add("soft");
+            });
+          }, totalDelay);
+
+          if (type === 'exploit') {
+            setTimeout(() => {
+              window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+            }, 300);
+          }
+        })
+        .catch(error => {
+          const el = document.getElementById(elementId);
+          el.textContent = `Error loading ${file}: ${error}`;
+          el.style.display = "block";
+        });
+    }
+
+    function generateCommands(type) {
+      const inputId = type === 'recon' ? 'target' : 'target2';
+      const outputId = 'output-' + type;
+      const target = document.getElementById(inputId).value.trim();
+
+      if (!target) {
+        alert("Please enter a target domain.");
+        return;
+      }
+
+      let collaborator = "";
+      if (type === 'exploit') {
+        collaborator = document.getElementById("collaborator").value.trim();
+        if (!collaborator) {
+          alert("Please enter a collaborator server.");
+          return;
+        }
+      }
+
+      const file = type === 'recon' ? 'recon_commands.txt' : 'exploit_commands.txt';
+      loadCommands(file, outputId, target, collaborator, type);
+    }
+
+    function copyToClipboard(type) {
+      const outputId = type === 'recon' ? 'output-recon' : 'output-exploit';
+      const button = type === 'recon' ? document.querySelector('.btn-success') : document.querySelector('.btn-warning');
+      const text = document.getElementById(outputId).dataset.raw || '';
+
+      const cleanedText = text
+        .split('\n')
+        .map(line => line.startsWith('$ ') ? line.slice(2) : line)
+        .join('\n');
+
+      navigator.clipboard.writeText(cleanedText)
+        .then(() => {
+          const originalText = button.textContent;
+          button.textContent = 'Copied! happy hacking 😁🤡';
+          setTimeout(() => button.textContent = originalText, 2000);
+        })
+        .catch(() => alert("Failed to copy!"));
+    }
+  </script>
+</body>
+
+</html>

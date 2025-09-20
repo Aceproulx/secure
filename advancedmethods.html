@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>LostSec</title>
+    <style>
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+            background: #0a0a0a;
+            font-family: Arial, sans-serif;
+            color: #fff;
+        }
+
+        .page-wrap {
+            position: relative;
+            min-height: 100vh;
+            min-width: 100vw;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+
+        /* Consistent Header */
+        .header-bar {
+            background: linear-gradient(90deg, #0d0d0d, #1f1f1f);
+            border-bottom: 2px solid #0ff;
+            padding: 0.75rem 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1070;
+            box-shadow: 0 0 12px rgba(0, 255, 255, 0.4);
+        }
+
+        .header-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #0ff;
+            margin: 0;
+            text-shadow: 0 0 6px rgba(0, 255, 255, 0.6);
+            text-align: center;
+            flex: 1;
+        }
+
+        .header-bar a {
+            text-decoration: none;
+        }
+
+        .back-btn {
+            color: #eee;
+            border: 1px solid #0ff;
+            border-radius: 50px;
+            padding: 0.4rem 1.2rem;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .back-btn:hover {
+            background: #0ff;
+            color: #121212;
+            box-shadow: 0 0 12px #0ff;
+        }
+
+        /* Full Screen button inside header */
+        .fullscreen-btn {
+            background: #222;
+            border: 1px solid #0ff;
+            padding: 0.4rem 1rem;
+            color: #0ff;
+            font-size: 0.9rem;
+            cursor: pointer;
+            border-radius: 50px;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .fullscreen-btn:hover {
+            background: #0ff;
+            color: #121212;
+            box-shadow: 0 0 12px #0ff;
+        }
+
+        .fullscreen-btn.hidden {
+            display: none;
+        }
+
+        .iframe-container {
+            position: absolute;
+            top: 56px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            transition: top 0.4s ease;
+        }
+
+        .iframe-container.full {
+            top: 0;
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page-wrap">
+        <!-- Consistent Header -->
+        <div class="header-bar" id="header">
+            <a href="index.html" class="back-btn">⬅ Back</a>
+            <h1 class="header-title">🌐 LostSec</h1>
+            <button class="fullscreen-btn" id="fullscreenBtn" onclick="toggleFullScreen()">Full Screen</button>
+        </div>
+
+        <!-- Iframe -->
+        <div class="iframe-container" id="iframe-container">
+            <iframe src="https://lostsec.xyz"></iframe>
+        </div>
+    </div>
+
+    <script>
+        function toggleFullScreen() {
+            const header = document.getElementById("header");
+            const iframeContainer = document.getElementById("iframe-container");
+            const fullBtn = document.getElementById("fullscreenBtn");
+
+            header.style.display = "none";
+            iframeContainer.classList.add("full");
+            fullBtn.classList.add("hidden");
+        }
+    </script>
+</body>
+
+</html>

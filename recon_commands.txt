@@ -1,0 +1,29 @@
+#!/bin/bash
+$ subfinder -d {{TARGET}} -all -recursive | tee subfinder.txt
+$ shodanx subdomain -d {{TARGET}} -o shodanx.txt
+$ assetfinder --subs-only {{TARGET}} | grep "\.{{TARGET}}" | tee -a assertfinder.txt
+$ amass enum -active -norecursive -d {{TARGET}} | grep "\.{{TARGET}}" | awk '{print $1}' | tee amass.txt
+$ gobuster dns -d {{TARGET}} -w /mnt/d/Downloads/Documents/subdomain_megalist.txt -o gobuster_subs.txt && cat gobuster_subs.txt | awk '{print $2}' | tee gobuster.txt
+$ cat subfinder.txt amass.txt shodanx.txt assertfinder.txt gobuster.txt | sort -u | grep '\.{{TARGET}}'| tee -a subs_{{TARGET}}.txt && rm  subfinder.txt amass.txt shodanx.txt assertfinder.txt gobuster.txt
+$ curl -s "https://otx.alienvault.com/api/v1/indicators/hostname/{{TARGET}}/passive_dns" | jq -r '.passive_dns[]?.hostname' | sort -u | tee -a alienvault_subs.txt
+$ curl -s "https://urlscan.io/api/v1/search/?q=domain:{{TARGET}}&size=10000" | jq -r '.results[]?.page?.domain' | sort -u | tee urlscan_subs.txt
+$ cat subs_{{TARGET}}.txt alienvault_subs.txt urlscan_subs.txt subfinder.txt | sort -u |grep {{TARGET}}| tee -a all_subdomains.txt && rm subs_{{TARGET}}.txt alienvault_subs.txt urlscan_subs.txt
+$ httpx -l all_subdomains.txt -td -title -sc -ip -threads 200 -o httpx_alive.txt
+$ cat httpx_alive.txt | grep -Ei 'old|asp|php|jsp|jspx|aspx' | tee subs-commonly-wth-vulns.txt
+$ cat httpx_alive.txt | awk '{print $1}' | tee hosts_alive.txt
+$ cat hosts_alive.txt | grep -E "admin|panel|portal|secure|dashboard|internal|api" | tee important_subdomains.txt
+$ waymore -i {{TARGET}} -mode U -oU waymore.txt
+$ cat hosts_alive.txt | gau | tee gaurls.txt
+$ cat hosts_alive.txt | gauplus -subs -b png,jpg,gif,jpeg,swf,woff,gif,svg -o gauplus.txt
+$ cat hosts_alive.txt | katana -d 5 | tee katana.txts
+$ cat gauplus.txt gaurls.txt katana.txt | anew all_urls.txt
+$ cat all_urls.txt | grep -E ".php|.asp|.aspx|.jspx|.jsp" | tee urls_common_with-vulns.txt
+$ cat all_urls.txt | gf ssrf | uro | tee ssrf_urls.txt
+$ cat all_urls.txt | grep -Pi "returnUrl=|continue=|dest=|destination=|forward=|go=|goto=|login\?to=|login_url=|logout=|next=|next_page=|out=|g=|redir=|redirect=|redirect_to=|redirect_uri=|redirect_url=|return=|returnTo=|return_path=|return_to=|return_url=|rurl=|site=|target=|to=|uri=|url=|qurl=|rit_url=|jump=|jump_url=|originUrl=|origin=|Url=|desturl=|u=|Redirect=|location=|ReturnUrl=|redirect_url=|redirect_to=|forward_to=|forward_url=|destination_url=|jump_to=|go_to=|goto_url=|target_url=|redirect_link=" | tee redirect_params.txt
+$ cat all_urls.txt | gf redirect | uro | sort -u | anew redirect_params.txt
+$ grep -oE '(/|https?://)[^"]+\.js' all_urls.txt | grep -Ev '/?(jquery|bootstrap|react|vue|angular|popper|moment|chart|axios|lodash)(\.bundle)?(\.min)?\.js' | anew jsfiles_filtered.txt
+$ grep -iE '(auth|login|session|user|account|register|payment|checkout|wallet|admin|dashboard|cms|config|env|debug|core|main|app)' jsfiles_filtered.txt > jsfiles_goldmine.txt
+$ while read url; do echo -e "\n\n//=== THIS JSFILE BELONGS TO: $url ===\n" | tee -a goldmine_javascript_dump.js; curl -s "$url" |js-beautify| tee -a goldmine_javascript_dump.js | grep -iE 'apikey|token|secret|authorization|bearer'; done < jsfiles_goldmine.txt
+$ nuclei -l hosts_alive.txt -t ~/nuclei-templates/ -severity critical,high,medium,low -json-export nuclei_findings.json
+$ nuclei -t ~/nuclei-templates/cves/ -list hosts_alive.txt -json-export cves.json
+$ find . -maxdepth 1 -type f -empty -delete
